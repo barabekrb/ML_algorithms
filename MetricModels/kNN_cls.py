@@ -77,7 +77,25 @@ class kNN_cls():
                 cls_pred.sort_values(by=["norm"], ascending=True, inplace=True, ignore_index=True)
                 y_s.append(self.y[cls_pred[:self.k]['ind']].sum() / self.k)
         if self.weight == 'rank':
-            pass
+            for _, row in X_.iterrows():
+                cls_pred = []
+                for j, rs in self.X.iterrows():
+                    cls_pred.append([j, self.metrics[self.metric](row , rs)])
+                cls_pred = pd.DataFrame(cls_pred, columns=['ind', 'norm'])
+                cls_pred.sort_values(by=["norm"], ascending=True, inplace=True, ignore_index=True)
+                y_r = self.y[cls_pred['ind']]
+                r1 = sum( 1 / (cls_pred['ind'][y_r==1] + 1))
+                r2 = sum(1 / cls_pred['ind'] + 1)
+                y_s.append(r1/r2)
         if self.weight == 'distance':
             pass
         return np.array(y_s)
+    
+
+    def rank(self, preds: pd.DataFrame):
+        preds.insert(2,'class',self.y[0][preds['ind']],True)
+        r1 = sum(1/(preds[preds['class']==1]['ind']+1))
+        r2 = sum(1/(preds['ind']+1))
+        return r1/r2
+        
+    
