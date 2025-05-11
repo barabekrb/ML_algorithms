@@ -12,8 +12,9 @@ def rank(preds: pd.DataFrame):
 
 
 def main():
-    pr = pd.DataFrame([[0,3],[1,4],[2,6],[3,9],[4,10]], columns=['ind', 'norm'])
-    print(rank(pr))
+   
+   cls, cont = np.unique(np.array([1,0,0,1]), return_counts=True)
+   print(cls, cont, np.argmax(cont))
 
 
 
