@@ -13,7 +13,11 @@ def rank(preds: pd.DataFrame):
 
 def main():
    
-   print(pd.DataFrame({"lol":[1,2,3,4]}).shape)
+   predY = pd.DataFrame({"class":[1,0,0,0,1,0], "dist":[12,4,5,9,2,1]})
+   print(predY)
+   predY = predY.sort_values(by=['dist'],ascending=True,ignore_index=True)
+   predY.insert(2, 'rank', np.arange(6))
+   print(sum(predY['class'])>=(len(predY)//2))
 
 
 
