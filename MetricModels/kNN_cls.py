@@ -64,13 +64,13 @@ class MyKNNClf:
     def __str__(self) -> str:
         return f"MyKNNClf class: k={self.k}"
     
-    def fit(self, x_:pd.DataFrame, y_:pd.Series):
+    def fit(self, x_:pd.DataFrame, y_:pd.Series) -> None:
         self.x_ = x_
         self.y_ = y_
         self.train_size = x_.shape
 
 
-    def predict(self, x_features:pd.DataFrame):
+    def predict(self, x_features:pd.DataFrame) -> np.array:
         predict_m = []
         for _, xf in x_features.iterrows():
             k_features = np.array([self.metric(xf.to_numpy(), xt.to_numpy()) for _, xt in self.x_.iterrows()])
@@ -81,7 +81,7 @@ class MyKNNClf:
             predict_m.append(pred_cls)
         return np.array(predict_m)
 
-    def predict_proba(self, x_features:pd.DataFrame):
+    def predict_proba(self, x_features:pd.DataFrame) -> np.array:
         predict_m = []
         for _, xf in x_features.iterrows():
             k_features = np.array([self.metric(xf.to_numpy(), xt.to_numpy()) for _, xt in self.x_.iterrows()])
