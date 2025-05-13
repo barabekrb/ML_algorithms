@@ -13,8 +13,7 @@ def rank(preds: pd.DataFrame):
 
 def main():
    
-   cls, cont = np.unique(np.array([1,0,0,1]), return_counts=True)
-   print(cls, cont, np.argmax(cont))
+   print(pd.DataFrame({"lol":[1,2,3,4]}).shape)
 
 
 
