@@ -12,14 +12,20 @@ def rank(preds: pd.DataFrame):
 
 
 def main():
+   print(2**30)
    
-   predY = pd.DataFrame({"class":[1,0,0,0,1,0], "dist":[12,4,5,9,2,1]})
-   print(predY)
-   predY = predY.sort_values(by=['dist'],ascending=True,ignore_index=True)
-   predY.insert(2, 'rank', np.arange(6))
-   print(sum(predY['class'])>=(len(predY)//2))
 
-
+def schenon_enthropy(y_t, classes : np.array) -> float:
+            s0 = 0.
+            if y_t.size ==0:
+                return 1e-12
+            for cls in classes:
+                p_i = len(y_t[y_t == cls])/len(y_t)
+                if p_i!=0:
+                    s0 -= p_i * np.log2(p_i)  
+                else:
+                    s0 -= 1e-12
+            return s0
 
 main()
 # pr = pd.DataFrame([[0,3],[1,4],[2,6],[3,9],[4,10]], columns=['ind', 'norm'])
