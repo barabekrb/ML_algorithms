@@ -1,5 +1,7 @@
-import pandas as pd
 import numpy as np
+import pandas as pd 
+import sklearn.datasets as skl
+from DecisionTreeModels.ClassificationTree import MyTreeClf
 
 
 def rank(preds: pd.DataFrame):
@@ -12,7 +14,31 @@ def rank(preds: pd.DataFrame):
 
 
 def main():
-   print(2**30)
+    X, y = skl.make_classification(n_samples=150, n_features=5, n_informative=3, random_state=42)
+    X = pd.DataFrame(X).round(2)
+    y = pd.Series(y)
+    X.columns = [f'col_{col}' for col in X.columns]
+
+    trr = MyTreeClf(5,5,10)
+    # c, v, ig = trr.get_best_split(X, y)
+    # X1, y1 = X[X[c]<=v], y[X[c]<=v]
+    # X2, y2 = X[X[c]>v], y[X[c]>v]
+
+    # c, v, ig = trr.get_best_split(X1, y1)
+
+
+    # X11, y11 = X1[X1[c]<=v], y1[X1[c]<=v]
+    # X12, y12 = X1[X1[c]>v], y1[X1[c]>v]
+
+
+    # c, v, ig = trr.get_best_split(X12, y12)
+
+    # print(c, v)
+    trr.fit(X, y)
+    trr.print_tree()
+    print(trr.leafs_cnt)
+
+    
    
 
 def schenon_enthropy(y_t, classes : np.array) -> float:
