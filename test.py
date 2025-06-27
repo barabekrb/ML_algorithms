@@ -14,30 +14,48 @@ def rank(preds: pd.DataFrame):
 
 
 def main():
-    X, y = skl.make_classification(n_samples=150, n_features=5, n_informative=3, random_state=42)
-    X = pd.DataFrame(X).round(2)
-    y = pd.Series(y)
-    X.columns = [f'col_{col}' for col in X.columns]
-
-    trr = MyTreeClf(5,5,10)
-    # c, v, ig = trr.get_best_split(X, y)
-    # X1, y1 = X[X[c]<=v], y[X[c]<=v]
-    # X2, y2 = X[X[c]>v], y[X[c]>v]
-
-    # c, v, ig = trr.get_best_split(X1, y1)
-
-
-    # X11, y11 = X1[X1[c]<=v], y1[X1[c]<=v]
-    # X12, y12 = X1[X1[c]>v], y1[X1[c]>v]
+    df = pd.read_csv('banknote+authentication.zip', header=None)
+    df.columns = ['variance', 'skewness', 'curtosis', 'entropy', 'target']
+    X, y = df.iloc[:,:4], df['target']
+    tr = MyTreeClf(3,2,5,None)
+    tr.fit(X,y)
+    # tr.print_tree()
+    # print(tr.leafs_cnt)
+    # print(tr.tree.sum_leaf())
+    
+          
 
 
-    # c, v, ig = trr.get_best_split(X12, y12)
+def test_all(X):
+    some_testes = [
+          (1,1,2,8),
+          (3,2,5,None),
+          (5,200,10,4),
+          (4,100,17,16),
+          (10,40,21,10),
+          (15, 20, 30, 6),
+    ]
 
-    # print(c, v)
-    trr.fit(X, y)
-    trr.print_tree()
-    print(trr.leafs_cnt)
+    some_results = [
+          (2, 0.71033),
+          (5, 2.916956),
+          (10, 5.020575),
+          (10, 5.85783),
+          (19, 9.526468),
+          (26, 12.025427),
+    ]
+    res_l = []
+    res_sum_l = [] 
+    for i, par in enumerate(some_testes):
+          max_d, min_s, max_l, bins = par
+          tr = MyTreeClf(max_d, min_s, max_l, bins)
+          tr.fit(X, y)
+          res_l.append([tr.leafs_cnt, some_results[i][0]])
+          res_sum_l.append(tr.tree.sum_leaf() - some_results[i][1])
+    
 
+    print(res_l)
+    print(res_sum_l)
     
    
 

@@ -59,30 +59,51 @@ class Tree:
         
 
 class MyTreeClf:
-    def __init__(self, max_depth: int = 5, min_samples_split: int = 2, max_leafs: int = 20)->None:
+    def __init__(self, max_depth: int = 5, min_samples_split: int = 2, max_leafs: int = 20, bins: int = None)->None:
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.max_leafs = max_leafs
         self.leafs_cnt = 0
         self.potential_leafs = 0
         self.tree = None
+        self.bins = bins
+        self.splits = None
 
     
     def __str__(self)->str:
         return f"MyTreeClf class: max_depth={self.max_depth}, min_samples_split={self.min_samples_split}, max_leafs={self.max_leafs}"
     
 
+    def make_splits(self, X:pd.DataFrame):
+        splits = dict({})
+        if self.bins==None or len(X)<=self.bins-1:
+            for col in X.columns:
+                uniq_col_vals = np.sort(X[col].unique())
+                splits[col] = ((np.append(uniq_col_vals[1:], 0)+uniq_col_vals)/2) [:-1]
+            self.splits = splits
+        else:
+            for col in X.columns:
+                _, borders = np.histogram(X[col], self.bins)
+                splits[col] = borders[1:-1]
+            self.splits =  splits
+
+
     def fit(self, x_:pd.DataFrame, y_:pd.Series):
         if self.max_leafs<2:
             self.max_leafs = 2
         if self.min_samples_split<2:
             self.min_samples_split = 2
+        self.make_splits(x_)
         self.tree = self.fitRecurtion(x_, y_, 1, "main")
 
     def fitRecurtion(self, x_:pd.DataFrame, y_:pd.Series, depth: int, l_or_r: str):
         if depth>self.max_depth:
             self.leafs_cnt+=1
             return Leaf(sum(y_)/len(y_), l_or_r, depth)
+        if self.bins!=None:
+            if sum(x_.isin(self.splits).sum())==0:
+                self.leafs_cnt+=1
+                return Leaf(sum(y_)/len(y_), l_or_r, depth)
         self.potential_leafs+=2
         col, val, _ = self.get_best_split(x_, y_)
         xL_ = x_[x_[col]<=val]
@@ -91,8 +112,6 @@ class MyTreeClf:
         yR = y_[x_[col]>val]
         lif = (len(yL.unique())>1) and (len(yL)>=self.min_samples_split)
         rif = (len(yR.unique())>1) and (len(yR)>=self.min_samples_split)
-
-        rleaf = len(yR)==1 or len(yR)<self.min_samples_split or len(yR.unique())<=1
 
         if self.leafs_cnt + self.potential_leafs <= self.max_leafs:
             if lif:
@@ -123,7 +142,8 @@ class MyTreeClf:
         return Tree(val, depth, col, lTree, rTree)
 
         
-        
+    # def if_split_in_range(self, x:pd.DataFrame):
+    #     pass
 
 
     def get_best_split(self, x_: pd.DataFrame, y_: pd.Series):
@@ -139,19 +159,18 @@ class MyTreeClf:
                     s0 -= 1e-12
             return s0
         splt_cols = pd.DataFrame({'col':[], 'splt':[], 'ig':[]})
+        classes = y_.unique()
+        s0 = schenon_enthropy(y_, classes)
         for col in x_.columns:
-            uniq_col_vals = np.sort(x_[col].unique())
-            split_vals = ((np.append(uniq_col_vals[1:], 0)+uniq_col_vals)/2) [:-1]
-            classes = y_.unique()
-            s0 = schenon_enthropy(y_, classes)
             IGs = pd.DataFrame({'splt':[], 'ig':[]})
-            for splt in split_vals:
+            for splt in self.splits[col]:
                 left_part = y_[x_[col]<=splt]
                 right_part = y_[x_[col]>splt]
                 ig = s0 - len(left_part)/len(y_)*schenon_enthropy(left_part, classes) - len(right_part)/len(y_)*schenon_enthropy(right_part, classes)
                 IGs = pd.concat([pd.DataFrame([[splt, ig]], columns=IGs.columns), IGs], ignore_index=True)
             splt_cols = pd.concat([splt_cols, pd.DataFrame([[col, IGs.iloc[IGs['ig'].idxmax()]['splt'], IGs['ig'].max()]], columns=splt_cols.columns)], ignore_index=True)
             splt_cols.add({'col':col, 'splt':IGs.iloc[IGs['ig'].idxmax()]['splt'], 'ig':IGs['ig'].max()})
+        print(splt_cols)
         return splt_cols['col'].iloc[splt_cols['ig'].idxmax()], splt_cols['splt'].iloc[splt_cols['ig'].idxmax()], splt_cols['ig'].max()
     
 
