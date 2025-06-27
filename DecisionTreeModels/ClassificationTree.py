@@ -15,6 +15,10 @@ class Leaf:
 
     def prnt(self):
         return self.depth * "\t" + f"{self.l_or_r} leaf score = {self.leaf_cnt}\n"
+    
+
+    def predict_proba(self, x):
+        return self.leaf_cnt
 
 class Tree:
     def __init__(self, root, depth, feature: str, left: Optional["Tree | Leaf"] = None, rigth: Optional["Tree | Leaf"] = None):
@@ -45,6 +49,13 @@ class Tree:
         else:
             s+=self.right.sum_leaf()
         return s
+    
+
+    def predict_proba(self, x):
+        if x[self.feature]<=self.root:
+            return self.left.predict_proba(x)
+        else:
+            return self.right.predict_proba(x)
         
 
 class MyTreeClf:
@@ -67,7 +78,6 @@ class MyTreeClf:
         if self.min_samples_split<2:
             self.min_samples_split = 2
         self.tree = self.fitRecurtion(x_, y_, 1, "main")
-        #self.print_tree()
 
     def fitRecurtion(self, x_:pd.DataFrame, y_:pd.Series, depth: int, l_or_r: str):
         if depth>self.max_depth:
@@ -147,3 +157,19 @@ class MyTreeClf:
 
     def print_tree(self):
         print(self.tree.prnt())
+
+
+    def predict(self, X:pd.DataFrame):
+        res = []
+        for _, r in X.iterrows():
+            prob = self.tree.predict_proba(r)
+            res.append(int(prob>0.5))
+        return res
+
+
+    def predict_proba(self, X:pd.DataFrame):
+        res = []
+        for _, r in X.iterrows():
+            prob = self.tree.predict_proba(r)
+            res.append(prob)
+        return res
