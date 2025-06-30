@@ -29,7 +29,7 @@ class Tree:
         self.right = rigth
 
     def prnt(self)->str:
-        tree =  self.depth*"\t" + str(self.feature) + ">=" +  str(self.root) + "\n"
+        tree =  self.depth*"\t" + str(self.feature) + ">" +  str(self.root) + "\n"
         if self.left != None:
             tree += self.left.prnt()
         if self.right != None:
@@ -76,10 +76,10 @@ class MyTreeClf:
 
     def make_splits(self, X:pd.DataFrame):
         splits = dict({})
-        if self.bins==None or len(X)<=self.bins-1:
+        if (self.bins==None) or (len(X)<=self.bins-1):
             for col in X.columns:
                 uniq_col_vals = np.sort(X[col].unique())
-                splits[col] = ((np.append(uniq_col_vals[1:], 0)+uniq_col_vals)/2) [:-1]
+                splits[col] = ((np.append(uniq_col_vals[1:], 0) + uniq_col_vals)/2) [:-1]
             self.splits = splits
         else:
             for col in X.columns:
@@ -101,7 +101,7 @@ class MyTreeClf:
             self.leafs_cnt+=1
             return Leaf(sum(y_)/len(y_), l_or_r, depth)
         if self.bins!=None:
-            if sum(x_.isin(self.splits).sum())==0:
+            if self.is_in(x_):
                 self.leafs_cnt+=1
                 return Leaf(sum(y_)/len(y_), l_or_r, depth)
         self.potential_leafs+=2
@@ -141,9 +141,16 @@ class MyTreeClf:
 
         return Tree(val, depth, col, lTree, rTree)
 
-        
-    # def if_split_in_range(self, x:pd.DataFrame):
-    #     pass
+
+    def is_in(self, X:pd.DataFrame):
+        for col, splts in self.splits.items():
+            x_min = X[col].min()
+            x_max = X[col].max()
+            for splt in splts:
+                if x_min<=splt<x_max:
+                    return False
+        return True
+                
 
 
     def get_best_split(self, x_: pd.DataFrame, y_: pd.Series):
@@ -167,10 +174,10 @@ class MyTreeClf:
                 left_part = y_[x_[col]<=splt]
                 right_part = y_[x_[col]>splt]
                 ig = s0 - len(left_part)/len(y_)*schenon_enthropy(left_part, classes) - len(right_part)/len(y_)*schenon_enthropy(right_part, classes)
-                IGs = pd.concat([pd.DataFrame([[splt, ig]], columns=IGs.columns), IGs], ignore_index=True)
+                IGs = pd.concat([IGs, pd.DataFrame([[splt, ig]], columns=IGs.columns)], ignore_index=True)
             splt_cols = pd.concat([splt_cols, pd.DataFrame([[col, IGs.iloc[IGs['ig'].idxmax()]['splt'], IGs['ig'].max()]], columns=splt_cols.columns)], ignore_index=True)
             splt_cols.add({'col':col, 'splt':IGs.iloc[IGs['ig'].idxmax()]['splt'], 'ig':IGs['ig'].max()})
-        print(splt_cols)
+        # print(splt_cols)
         return splt_cols['col'].iloc[splt_cols['ig'].idxmax()], splt_cols['splt'].iloc[splt_cols['ig'].idxmax()], splt_cols['ig'].max()
     
 

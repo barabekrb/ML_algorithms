@@ -17,16 +17,14 @@ def main():
     df = pd.read_csv('banknote+authentication.zip', header=None)
     df.columns = ['variance', 'skewness', 'curtosis', 'entropy', 'target']
     X, y = df.iloc[:,:4], df['target']
-    tr = MyTreeClf(3,2,5,None)
-    tr.fit(X,y)
-    # tr.print_tree()
-    # print(tr.leafs_cnt)
-    # print(tr.tree.sum_leaf())
+    tr = MyTreeClf(15, 20, 30, bins=6)
     
+    # print(tr.tree.sum_leaf())
+    test_all(X, y)
           
 
 
-def test_all(X):
+def test_all(X, y):
     some_testes = [
           (1,1,2,8),
           (3,2,5,None),
@@ -48,7 +46,7 @@ def test_all(X):
     res_sum_l = [] 
     for i, par in enumerate(some_testes):
           max_d, min_s, max_l, bins = par
-          tr = MyTreeClf(max_d, min_s, max_l, bins)
+          tr = MyTreeClf(max_depth=max_d, min_samples_split=min_s, max_leafs=max_l, bins=bins)
           tr.fit(X, y)
           res_l.append([tr.leafs_cnt, some_results[i][0]])
           res_sum_l.append(tr.tree.sum_leaf() - some_results[i][1])
