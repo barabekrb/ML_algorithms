@@ -26,27 +26,27 @@ def main():
 
 def test_all(X, y):
     some_testes = [
-          (1,1,2,8),
-          (3,2,5,None),
-          (5,200,10,4),
-          (4,100,17,16),
-          (10,40,21,10),
-          (15, 20, 30, 6),
+          (1,1,2,8, 'gini'),
+          (3,2,5,None, 'gini'),
+          (5,200,10,4, 'entropy'),
+          (4,100,17,16, 'gini'),
+          (10,40,21,10, 'gini'),
+          (15, 20, 30, 6, 'gini'),
     ]
 
     some_results = [
-          (2, 0.71033),
-          (5, 2.916956),
+          (2, 0.981148),
+          (5, 2.799994),
           (10, 5.020575),
-          (10, 5.85783),
-          (19, 9.526468),
-          (26, 12.025427),
+          (11, 5.200813),
+          (21, 10.198869),
+          (27, 12.412269),
     ]
     res_l = []
     res_sum_l = [] 
     for i, par in enumerate(some_testes):
-          max_d, min_s, max_l, bins = par
-          tr = MyTreeClf(max_depth=max_d, min_samples_split=min_s, max_leafs=max_l, bins=bins)
+          max_d, min_s, max_l, bins, crit = par
+          tr = MyTreeClf(max_depth=max_d, min_samples_split=min_s, max_leafs=max_l, bins=bins, criterion=crit)
           tr.fit(X, y)
           res_l.append([tr.leafs_cnt, some_results[i][0]])
           res_sum_l.append(tr.tree.sum_leaf() - some_results[i][1])

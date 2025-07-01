@@ -11,6 +11,7 @@ class Leaf:
         self.l_or_r = l_or_r
         self.leaf_cnt = leaf_cnt
         self.depth = depth
+        self.ig = 0
     
 
     def prnt(self):
@@ -21,15 +22,17 @@ class Leaf:
         return self.leaf_cnt
 
 class Tree:
-    def __init__(self, root, depth, feature: str, left: Optional["Tree | Leaf"] = None, rigth: Optional["Tree | Leaf"] = None):
+    def __init__(self, root, depth, ig, leny, feature: str, left: Optional["Tree | Leaf"] = None, rigth: Optional["Tree | Leaf"] = None):
         self.depth = depth
         self.feature = feature
         self.root = root
         self.left = left
         self.right = rigth
+        self.ig  = ig
+        self.leny = leny
 
     def prnt(self)->str:
-        tree =  self.depth*"\t" + str(self.feature) + ">" +  str(self.root) + "\n"
+        tree =  self.depth*"\t" + str(self.feature) + ">" +  str(self.root) + f"    ig = {self.ig} |  len = {self.leny}" +"\n"
         if self.left != None:
             tree += self.left.prnt()
         if self.right != None:
@@ -59,7 +62,7 @@ class Tree:
         
 
 class MyTreeClf:
-    def __init__(self, max_depth: int = 5, min_samples_split: int = 2, max_leafs: int = 20, bins: int = None)->None:
+    def __init__(self, max_depth: int = 5, min_samples_split: int = 2, max_leafs: int = 20, bins: int = None, criterion: str = 'entropy')->None:
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.max_leafs = max_leafs
@@ -68,6 +71,9 @@ class MyTreeClf:
         self.tree = None
         self.bins = bins
         self.splits = None
+        self.criterion = criterion
+        self.fi = dict({})
+        self.sample_len = 0
 
     
     def __str__(self)->str:
@@ -94,6 +100,9 @@ class MyTreeClf:
         if self.min_samples_split<2:
             self.min_samples_split = 2
         self.make_splits(x_)
+        self.sample_len = len(y_)
+        for col in x_.columns:
+            self.fi[col] = 0
         self.tree = self.fitRecurtion(x_, y_, 1, "main")
 
     def fitRecurtion(self, x_:pd.DataFrame, y_:pd.Series, depth: int, l_or_r: str):
@@ -105,7 +114,7 @@ class MyTreeClf:
                 self.leafs_cnt+=1
                 return Leaf(sum(y_)/len(y_), l_or_r, depth)
         self.potential_leafs+=2
-        col, val, _ = self.get_best_split(x_, y_)
+        col, val, ig = self.get_best_split(x_, y_)
         xL_ = x_[x_[col]<=val]
         yL = y_[x_[col]<=val]
         xR_ = x_[x_[col]>val]
@@ -138,8 +147,10 @@ class MyTreeClf:
             self.potential_leafs-=2
             self.leafs_cnt+=1
             return Leaf(sum(y_)/len(y_), l_or_r, depth)
+        
 
-        return Tree(val, depth, col, lTree, rTree)
+        self.fi[col] = self.fi[col] + len(y_)/self.sample_len * ig
+        return Tree(val, depth, ig, len(y_), col, lTree, rTree)
 
 
     def is_in(self, X:pd.DataFrame):
@@ -154,9 +165,10 @@ class MyTreeClf:
 
 
     def get_best_split(self, x_: pd.DataFrame, y_: pd.Series):
+
         def schenon_enthropy(y_t, classes : np.array) -> float:
             s0 = 0.
-            if y_t.size == 0:
+            if len(y_t) == 0:
                 return 1e-12
             for cls in classes:
                 p_i = len(y_t[y_t == cls])/len(y_t)
@@ -165,20 +177,32 @@ class MyTreeClf:
                 else:
                     s0 -= 1e-12
             return s0
-        splt_cols = pd.DataFrame({'col':[], 'splt':[], 'ig':[]})
+        
+        def gini(y_t, classes: np.array) -> float:
+            s0 = 1.
+            if len(y_t) == 0:
+                return 1e-12
+            for cls in classes:
+                p_i = len(y_t[y_t == cls])/len(y_t)
+                s0 -= p_i * p_i
+            return s0
+        
+        funcs = {'entropy': schenon_enthropy, 'gini': gini}
         classes = y_.unique()
-        s0 = schenon_enthropy(y_, classes)
+        s0 = funcs[self.criterion](y_, classes)
+        bestIG = -np.inf
+        bestCol = ""
+        bestSplit = 0    
         for col in x_.columns:
-            IGs = pd.DataFrame({'splt':[], 'ig':[]})
             for splt in self.splits[col]:
                 left_part = y_[x_[col]<=splt]
                 right_part = y_[x_[col]>splt]
-                ig = s0 - len(left_part)/len(y_)*schenon_enthropy(left_part, classes) - len(right_part)/len(y_)*schenon_enthropy(right_part, classes)
-                IGs = pd.concat([IGs, pd.DataFrame([[splt, ig]], columns=IGs.columns)], ignore_index=True)
-            splt_cols = pd.concat([splt_cols, pd.DataFrame([[col, IGs.iloc[IGs['ig'].idxmax()]['splt'], IGs['ig'].max()]], columns=splt_cols.columns)], ignore_index=True)
-            splt_cols.add({'col':col, 'splt':IGs.iloc[IGs['ig'].idxmax()]['splt'], 'ig':IGs['ig'].max()})
-        # print(splt_cols)
-        return splt_cols['col'].iloc[splt_cols['ig'].idxmax()], splt_cols['splt'].iloc[splt_cols['ig'].idxmax()], splt_cols['ig'].max()
+                ig = s0 - len(left_part)/len(y_)*funcs[self.criterion](left_part, classes) - len(right_part)/len(y_)*funcs[self.criterion](right_part, classes)
+                if ig > bestIG:
+                    bestIG = ig
+                    bestCol = col
+                    bestSplit = splt
+        return bestCol, bestSplit, bestIG
     
 
     def print_tree(self):
