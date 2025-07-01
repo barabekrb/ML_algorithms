@@ -2,6 +2,11 @@ import numpy as np
 import pandas as pd 
 import sklearn.datasets as skl
 from DecisionTreeModels.ClassificationTree import MyTreeClf
+from DecisionTreeModels.RegressionTree import MyTreeReg
+
+from sklearn.datasets import load_diabetes
+
+
 
 
 def rank(preds: pd.DataFrame):
@@ -14,14 +19,57 @@ def rank(preds: pd.DataFrame):
 
 
 def main():
-    df = pd.read_csv('banknote+authentication.zip', header=None)
-    df.columns = ['variance', 'skewness', 'curtosis', 'entropy', 'target']
-    X, y = df.iloc[:,:4], df['target']
-    tr = MyTreeClf(15, 20, 30, bins=6)
+    # df = pd.read_csv('banknote+authentication.zip', header=None)
+    # df.columns = ['variance', 'skewness', 'curtosis', 'entropy', 'target']
+    # X, y = df.iloc[:,:4], df['target']
+    # tr = MyTreeClf(15, 20, 30, bins=6)
     
-    # print(tr.tree.sum_leaf())
-    test_all(X, y)
+    # # print(tr.tree.sum_leaf())
+    # test_all(X, y)
+
+    data = load_diabetes(as_frame=True)
+    X, y = data['data'], data['target'] 
+    # tr = MyTreeReg(1,1,2)
+    # tr.fit(X, y)
+    # tr.print_tree()
+
+    test_all2(X, y)
           
+
+
+def test_all2(X, y):
+    some_testes = [
+        (1,1,2),
+        (3,2,5),
+        (5,100,10),
+        (4,50,17),
+        (10,40,21),
+        (15, 35, 30),
+]
+
+    some_results = [
+        (2, 303.138024),
+        (5, 813.992098),
+        (7, 1143.916064),
+        (11, 1808.268095),
+        (21, 3303.816014),
+        (27, 4352.894213),
+    ]
+
+    res_l = []
+    res_sum_l = [] 
+    for i, par in enumerate(some_testes):
+          max_d, min_s, max_l = par
+          tr = MyTreeReg(max_depth=max_d, min_samples_split=min_s, max_leafs=max_l)
+          tr.fit(X, y)
+          res_l.append([tr.leafs_cnt, some_results[i][0]])
+          res_sum_l.append(tr.tree.sum_leaf() - some_results[i][1])
+    
+
+    print(res_l)
+    print(res_sum_l)
+
+
 
 
 def test_all(X, y):
