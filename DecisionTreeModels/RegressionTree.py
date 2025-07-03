@@ -59,7 +59,7 @@ class Tree:
 
 
 class MyTreeReg:
-    def __init__(self, max_depth:int = 5, min_samples_split:int = 2, max_leafs:int = 20, bins: int = None, criterion: str = 'entropy'):
+    def __init__(self, max_depth:int = 5, min_samples_split:int = 2, max_leafs:int = 20, bins: int = None, criterion: str = 'entropy', sample_len: int = 0):
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.max_leafs = max_leafs
@@ -70,7 +70,7 @@ class MyTreeReg:
         self.splits = None
         self.criterion = criterion
         self.fi = dict({})
-        self.sample_len = 0
+        self.sample_len = sample_len
 
 
     def __str__(self):
@@ -102,9 +102,13 @@ class MyTreeReg:
     def fit(self, X:pd.DataFrame, y:pd.Series):
         if self.max_leafs<2:
             self.max_leafs = 2
-        if self.min_samples_split<2:
+        if self.min_samples_split<2: 
             self.min_samples_split = 2
         self.make_splits(X)
+        if self.sample_len == 0:
+            self.sample_len = len(y)
+        for col in X.columns:
+            self.fi[col] = 0
         self.tree = self.fitRecurtion(X, y, 1, "main")
         
 
@@ -152,7 +156,7 @@ class MyTreeReg:
             return Leaf(y_.mean(), l_or_r, depth)
         
 
-        # self.fi[col] = self.fi[col] + len(y_)/self.sample_len * ig
+        self.fi[col] = self.fi[col] + len(y_)/self.sample_len * ig
         return Tree(val, depth, ig, len(y_), col, lTree, rTree)
 
 
